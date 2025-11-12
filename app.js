@@ -1347,3 +1347,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+// localSave.js
+// Generic persistent save/load for ANY JS app using a simple object
+
+function saveToLocal(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+function loadFromLocal(key, fallback = null) {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+        try {
+            return JSON.parse(raw);
+        } catch (e) {
+            console.warn('Failed to parse saved data for key', key, e);
+        }
+    }
+    return fallback;
+}
+// Example use:
+// saveToLocal('eu5Campaign', campaignData);
+// let loaded = loadFromLocal('eu5Campaign');
