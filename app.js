@@ -11,9 +11,13 @@ let campaignData = {
 // Temporary storage for form participants
 let currentParticipants = [];
 
+// LocalStorage Keys
+const STORAGE_KEY = 'EU5_CampaignData';
+const DEFAULT_STORAGE_KEY = 'EU5_DefaultData';
+
 // Initialize the app
 function initApp() {
-    loadInitialData();
+    loadOrInitializeData();
     renderDashboard();
     renderTimeline();
     renderWars();
@@ -22,7 +26,37 @@ function initApp() {
     updateWarsList();
 }
 
-// Load initial campaign data
+// Load data from localStorage or initialize with defaults
+function loadOrInitializeData() {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    
+    if (savedData) {
+        try {
+            campaignData = JSON.parse(savedData);
+            console.log('Gegevens geladen uit localStorage');
+        } catch (error) {
+            console.error('Fout bij laden van gegevens:', error);
+            loadInitialData();
+            saveCampaignData();
+        }
+    } else {
+        loadInitialData();
+        saveCampaignData();
+    }
+}
+
+// Save campaign data to localStorage
+function saveCampaignData() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(campaignData));
+        console.log('Gegevens opgeslagen naar localStorage');
+    } catch (error) {
+        console.error('Fout bij opslaan van gegevens:', error);
+        alert('Kon gegevens niet opslaan. Je opslagruimte is mogelijk vol.');
+    }
+}
+
+// Load initial campaign data (defaults)
 function loadInitialData() {
     // Load nations
     campaignData.nations = [
@@ -300,6 +334,102 @@ function loadInitialData() {
     const latestEvent = campaignData.events.reduce((max, event) => 
         event.year > max ? event.year : max, 1338);
     campaignData.currentYear = latestEvent;
+}
+
+// Reset campaign to fresh start
+function resetCampaign() {
+    const confirmed = confirm('⚠️ WAARSCHUWING: Dit zal ALLE campaign gegevens verwijderen!\n\nWil je een schone campaign starten? Dit kan niet ongedaan gemaakt worden.');
+    
+    if (confirmed) {
+        const doubleConfirm = confirm('Dit is je LAATSTE waarschuwing. Alle events, mechanics, en wijzigingen zullen verwijderd worden.\n\nContinueren?');
+        
+        if (doubleConfirm) {
+            // Reset to defaults
+            campaignData = {
+                name: 'Rise of Three Nations',
+                startDate: 1338,
+                currentYear: 1386,
+                events: [],
+                nations: [],
+                mechanics: []
+            };
+            
+            loadInitialData();
+            saveCampaignData();
+            
+            // Refresh all sections
+            renderDashboard();
+            renderTimeline();
+            renderWars();
+            renderNations();
+            renderGlossary();
+            updateWarsList();
+            
+            // Show dashboard
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById('dashboard').classList.add('active');
+            
+            alert('✅ Campaign gereset naar standaard instellingen!');
+        }
+    }
+}
+
+// Export campaign data as JSON (for backup)
+function exportCampaignAsJSON() {
+    const dataStr = JSON.stringify(campaignData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `EU5_Campaign_Backup_${campaignData.currentYear}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert('Campaign gedownload als backup!');
+}
+
+// Import campaign data from JSON
+function importCampaignFromJSON() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = (event) => {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                
+                // Validate imported data
+                if (!importedData.nations || !importedData.events || !importedData.mechanics) {
+                    throw new Error('Ongeldig campaign bestand');
+                }
+                
+                campaignData = importedData;
+                saveCampaignData();
+                
+                renderDashboard();
+                renderTimeline();
+                renderWars();
+                renderNations();
+                renderGlossary();
+                updateWarsList();
+                
+                alert('✅ Campaign succesvol geïmporteerd!');
+            } catch (error) {
+                alert('❌ Fout bij importeren: ' + error.message);
+            }
+        };
+        
+        reader.readAsText(file);
+    };
+    
+    input.click();
 }
 
 // Show specific section
@@ -769,10 +899,12 @@ function addEvent(event) {
     }
     
     campaignData.events.push(newEvent);
+    saveCampaignData();
     
     // Update current year if needed
     if (newEvent.year > campaignData.currentYear) {
         campaignData.currentYear = newEvent.year;
+        saveCampaignData();
     }
     
     closeModal('addEventModal');
@@ -805,9 +937,11 @@ function addEventAndContinue() {
         }
         
         campaignData.events.push(newEvent);
+        saveCampaignData();
         
         if (newEvent.year > campaignData.currentYear) {
             campaignData.currentYear = newEvent.year;
+            saveCampaignData();
         }
         
         // Clear form but keep modal open
@@ -836,6 +970,7 @@ function addMechanic(event) {
     };
     
     campaignData.mechanics.push(newMechanic);
+    saveCampaignData();
     
     closeModal('addMechanicModal');
     renderGlossary();
