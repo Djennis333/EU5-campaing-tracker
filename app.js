@@ -11,6 +11,8 @@ let campaignData = {
 // Temporary storage for form participants
 let currentParticipants = [];
 
+// Timeline state removed - using simple list view
+
 // Initialize the app
 function initApp() {
     loadInitialData();
@@ -354,19 +356,22 @@ function renderDashboard() {
         .slice(0, 5);
     
     const recentEventsList = document.getElementById('recentEventsList');
-    recentEventsList.innerHTML = recentEvents.map(event => `
+    recentEventsList.innerHTML = recentEvents.map(event => {
+        const icon = getEventIcon(event.event_type);
+        return `
         <div class="event-list-item">
             <div>
+                <span style="font-size: 20px; margin-right: 8px;">${icon}</span>
                 <strong>${event.name}</strong><br>
                 <span style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">
-                    ${event.year} • ${event.nation} • ${event.event_type}
+                    📅 ${event.year} • ${event.nation} • ${event.event_type}
                 </span>
             </div>
             <button class="btn btn-secondary" style="padding: var(--space-4) var(--space-12);" onclick="showEventDetail(${event.id})">
                 View
             </button>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 // Timeline Functions
@@ -384,14 +389,15 @@ function renderTimeline() {
     timelineEvents.innerHTML = sortedEvents.map(event => {
         const nationBadge = getNationBadgeClass(event.nation);
         const typeBadge = getTypeBadgeClass(event.event_type);
+        const icon = getEventIcon(event.event_type);
         
         return `
             <div class="timeline-event" onclick="showEventDetail(${event.id})">
                 <div class="timeline-event-header">
-                    <span class="timeline-event-date">${event.year}</span>
+                    <span class="timeline-event-date">📅 ${event.year}</span>
                     <div class="event-badges">
                         <span class="badge ${nationBadge}">${event.nation}</span>
-                        <span class="badge ${typeBadge}">${event.event_type}</span>
+                        <span class="badge ${typeBadge}">${icon} ${event.event_type}</span>
                     </div>
                 </div>
                 <h3 class="timeline-event-name">${event.name}</h3>
@@ -436,25 +442,28 @@ function renderWars() {
     warsGrid.innerHTML = wars.map(war => {
         const duration = war.endYear ? `${war.startYear} - ${war.endYear}` : `${war.startYear} - Ongoing`;
         const statusClass = war.endYear ? 'completed' : 'ongoing';
-        const statusText = war.endYear ? 'Completed' : 'Ongoing';
+        const statusText = war.endYear ? '🏆 Completed' : '⚔️ Ongoing';
+        const yearCount = war.endYear ? war.endYear - war.startYear : 'Ongoing';
         
         return `
             <div class="war-card">
                 <div class="war-card-header">
-                    <h3 class="war-name">${war.name}</h3>
-                    <div class="war-dates">${duration}</div>
-                    ${war.endYear ? `<div class="war-dates">Duration: ${war.endYear - war.startYear} years</div>` : ''}
+                    <h3 class="war-name">⚔️ ${war.name}</h3>
+                    <div class="war-dates">📅 ${duration}</div>
+                    ${war.endYear ? `<div class="war-dates">⏱️ Duration: ${war.endYear - war.startYear} years</div>` : ''}
                     <span class="war-status ${statusClass}">${statusText}</span>
                 </div>
                 <div class="war-events">
-                    ${war.events.map(event => `
+                    ${war.events.map(event => {
+                        const icon = getEventIcon(event.event_type);
+                        return `
                         <div class="war-event-item">
-                            <strong>${event.year}</strong> - ${event.name}<br>
+                            ${icon} <strong>${event.year}</strong> - ${event.name}<br>
                             <span style="color: var(--color-text-secondary); font-size: var(--font-size-xs);">
                                 ${truncateText(event.description, 100)}
                             </span>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             </div>
         `;
@@ -510,25 +519,28 @@ function renderNations() {
                 <div class="nation-header">
                     <div class="nation-flag" style="background-color: ${nation.color};"></div>
                     <div class="nation-info">
-                        <h3>${nation.name}</h3>
-                        <p class="nation-player">Player: ${nation.player}</p>
+                        <h3>🏰 ${nation.name}</h3>
+                        <p class="nation-player">👤 Player: ${nation.player}</p>
                     </div>
                 </div>
                 
                 <div class="nation-section">
-                    <h4>Primary Culture</h4>
+                    <h4>🌍 Primary Culture</h4>
                     <p>${nation.culture}</p>
                 </div>
                 
                 <div class="nation-section">
-                    <h4>National Goals</h4>
+                    <h4>🎯 National Goals</h4>
                     <p>${nation.goals}</p>
                 </div>
                 
                 <div class="nation-section">
-                    <h4>Recent Events</h4>
+                    <h4>📜 Recent Events</h4>
                     <ul>
-                        ${nationEvents.map(e => `<li>${e.year}: ${e.name}</li>`).join('')}
+                        ${nationEvents.map(e => {
+                            const icon = getEventIcon(e.event_type);
+                            return `<li>${icon} ${e.year}: ${e.name}</li>`;
+                        }).join('')}
                     </ul>
                 </div>
             </div>
@@ -561,13 +573,24 @@ function renderGlossaryList(filteredMechanics = null) {
         return;
     }
     
-    glossaryList.innerHTML = mechanics.map(mechanic => `
+    const categoryIcons = {
+        'Core System': '⚙️',
+        'Governance': '🏛️',
+        'Economy': '💰',
+        'Military': '⚔️',
+        'Diplomacy': '🤝',
+        'Internal Politics': '🗃️'
+    };
+    
+    glossaryList.innerHTML = mechanics.map(mechanic => {
+        const icon = categoryIcons[mechanic.category] || '📚';
+        return `
         <div class="glossary-item">
-            <h3 class="glossary-term">${mechanic.term}</h3>
+            <h3 class="glossary-term">${icon} ${mechanic.term}</h3>
             <span class="glossary-category">${mechanic.category}</span>
             <p class="glossary-definition">${mechanic.definition}</p>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function filterGlossary() {
@@ -854,12 +877,13 @@ function showEventDetail(eventId) {
     
     titleEl.textContent = event.name;
     
+    const icon = getEventIcon(event.event_type);
     contentEl.innerHTML = `
         <div style="margin-bottom: var(--space-16);">
-            <p><strong>Date:</strong> ${event.year}</p>
-            <p><strong>Nation:</strong> ${event.nation}</p>
-            <p><strong>Event Type:</strong> ${event.event_type}</p>
-            ${event.war_name ? `<p><strong>War:</strong> ${event.war_name}</p>` : ''}
+            <p><strong>📅 Date:</strong> ${event.year}</p>
+            <p><strong>🎯 Nation:</strong> ${event.nation}</p>
+            <p><strong>📊 Event Type:</strong> ${icon} ${event.event_type}</p>
+            ${event.war_name ? `<p><strong>⚔️ War:</strong> ${event.war_name}</p>` : ''}
         </div>
         <div style="margin-bottom: var(--space-16);">
             <h4 style="margin-bottom: var(--space-8);">Description</h4>
@@ -868,12 +892,30 @@ function showEventDetail(eventId) {
         ${event.participants && event.participants.length > 0 ? `
             <div>
                 <h4 style="margin-bottom: var(--space-8);">Participants</h4>
-                <p>${event.participants.join(', ')}</p>
+                <p>👥 ${event.participants.join(', ')}</p>
             </div>
         ` : ''}
     `;
     
     modal.classList.add('active');
+}
+
+// Event type icons (Unicode emoji and symbols)
+function getEventIcon(eventType) {
+    const icons = {
+        'War Start': '⚔️',
+        'War End': '🏆',
+        'Economic': '💰',
+        'Political': '🏛️',
+        'Formation': '✨',
+        'Crisis': '🔴',
+        'Diplomatic': '🤝',
+        'Expansion': '📍',
+        'Cultural': '🎭',
+        'Religious': '✝️',
+        'Technological': '🔬'
+    };
+    return icons[eventType] || '📋';
 }
 
 // Utility Functions
