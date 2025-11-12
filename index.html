@@ -298,6 +298,29 @@ body {
     gap: var(--space-16);
     margin-bottom: var(--space-32);
 }
+<button class="btn btn-secondary" onclick="resetCampaign()">🔄 Reset Campaign</button>
+```**`exportCampaignAsJSON()`** - Backup maken
+- Download je volledige campaign als JSON-bestand
+- Handig voor veiligheidscopieën
+
+**`importCampaignFromJSON()`** - Campaign herstellen
+- Upload een eerder gedownload JSON-bestand
+- Perfect voor multi-device support
+
+### 3. **Automatische Data Persistentie**
+Alle deze functies slaan nu automatisch op:
+- ✅ Toegevoegde events
+- ✅ Toegevoegde mechanics
+- ✅ Alle wijzigingen
+- ✅ Huidige jahr
+
+## 📝 Hoe te Gebruiken:
+
+1. Vervang je huidige `app.js` met dit bestand
+2. Wanneer je nu events/mechanics toevoegt → **automatisch opgeslagen** 🚀
+3. Bij refresh → alles is nog daar ✨
+
+De gegevens zijn lokaal in jouw browser opgeslagen (niet op GitHub). Dit werkt perfect voor 20+ sessies!
 
 .stat-card {
     background-color: var(--color-surface);
