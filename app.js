@@ -1,150 +1,45 @@
-// ============ MULTI-CAMPAIGN STORAGE SYSTEM ============
-
-// Global campaigns manager
-let campaignsManager = {
-    campaigns: [],
-    currentCampaignId: null
+// Campaign Data
+let campaignData = {
+    name: 'Rise of Three Nations',
+    startDate: 1338,
+    currentYear: 1386,
+    events: [],
+    nations: [],
+    mechanics: []
 };
 
-// Initialize campaigns from localStorage
-function initializeCampaigns() {
-    const stored = localStorage.getItem('eu5Campaigns');
-    if (stored) {
-        try {
-            campaignsManager = JSON.parse(stored);
-            console.log('✓ Campaigns loaded from storage:', campaignsManager.campaigns.length);
-        } catch (e) {
-            console.error('Failed to load campaigns:', e);
-            createDefaultCampaigns();
-        }
-    } else {
-        createDefaultCampaigns();
-    }
-    
-    // If no campaign selected, select the first one
-    if (!campaignsManager.currentCampaignId && campaignsManager.campaigns.length > 0) {
-        campaignsManager.currentCampaignId = campaignsManager.campaigns[0].id;
-    }
+// Temporary storage for form participants
+let currentParticipants = [];
+
+// Timeline canvas state
+let timelineCanvas = null;
+let timelineCtx = null;
+let timelineState = {
+    startYear: 1337,
+    endYear: 1837,
+    viewStart: 1337,
+    viewEnd: 1837,
+    isDragging: false,
+    lastX: 0,
+    hoveredEvent: null
+};
+
+// Initialize the app
+function initApp() {
+    loadInitialData();
+    renderDashboard();
+    initInteractiveTimeline();
+    renderTimeline();
+    renderWars();
+    renderNations();
+    renderGlossary();
+    updateWarsList();
 }
 
-// Create default campaign on first load
-function createDefaultCampaigns() {
-    const defaultCampaign = {
-        id: 'campaign-' + Date.now(),
-        name: 'Rise of Three Nations',
-        startDate: 1338,
-        currentYear: 1386,
-        events: [],
-        nations: [],
-        mechanics: [],
-        createdAt: new Date().toISOString()
-    };
-    
-    campaignsManager.campaigns = [defaultCampaign];
-    campaignsManager.currentCampaignId = defaultCampaign.id;
-    
-    // Load initial data into default campaign
-    loadInitialDataIntoCampaign(defaultCampaign);
-    
-    saveCampaigns();
-}
-
-// Get current active campaign
-function getCurrentCampaign() {
-    return campaignsManager.campaigns.find(c => c.id === campaignsManager.currentCampaignId);
-}
-
-// Save all campaigns to localStorage
-function saveCampaigns() {
-    localStorage.setItem('eu5Campaigns', JSON.stringify(campaignsManager));
-    console.log('✓ All campaigns saved to storage');
-}
-
-// Create a new campaign
-function createNewCampaign(campaignName) {
-    if (!campaignName || campaignName.trim() === '') {
-        alert('Campaign name cannot be empty!');
-        return;
-    }
-    
-    const newCampaign = {
-        id: 'campaign-' + Date.now(),
-        name: campaignName.trim(),
-        startDate: 1338,
-        currentYear: 1338,
-        events: [],
-        nations: [],
-        mechanics: [],
-        createdAt: new Date().toISOString()
-    };
-    
-    // Load initial nations and mechanics into new campaign
-    loadInitialDataIntoCampaign(newCampaign);
-    
-    campaignsManager.campaigns.push(newCampaign);
-    campaignsManager.currentCampaignId = newCampaign.id;
-    
-    saveCampaigns();
-    updateCampaignSelector();
-    initApp();
-    
-    alert(`✓ Campaign "${campaignName}" created!`);
-}
-
-// Delete a campaign
-function deleteCampaign(campaignId) {
-    const campaign = campaignsManager.campaigns.find(c => c.id === campaignId);
-    if (!campaign) return;
-    
-    if (!confirm(`Delete campaign "${campaign.name}"? This cannot be undone.`)) {
-        return;
-    }
-    
-    campaignsManager.campaigns = campaignsManager.campaigns.filter(c => c.id !== campaignId);
-    
-    // If deleted campaign was active, select another one
-    if (campaignsManager.currentCampaignId === campaignId) {
-        if (campaignsManager.campaigns.length > 0) {
-            campaignsManager.currentCampaignId = campaignsManager.campaigns[0].id;
-        } else {
-            createDefaultCampaigns();
-        }
-    }
-    
-    saveCampaigns();
-    updateCampaignSelector();
-    initApp();
-}
-
-// Switch to a different campaign
-function switchCampaign(campaignId) {
-    const campaign = campaignsManager.campaigns.find(c => c.id === campaignId);
-    if (!campaign) {
-        console.error('Campaign not found:', campaignId);
-        return;
-    }
-    
-    campaignsManager.currentCampaignId = campaignId;
-    saveCampaigns();
-    initApp();
-}
-
-// Update campaign selector dropdown/buttons
-function updateCampaignSelector() {
-    const selector = document.getElementById('campaignSelector');
-    if (!selector) return;
-    
-    selector.innerHTML = campaignsManager.campaigns.map(campaign => `
-        <option value="${campaign.id}" ${campaign.id === campaignsManager.currentCampaignId ? 'selected' : ''}>
-            ${campaign.name}
-        </option>
-    `).join('');
-}
-
-// Load initial data into a campaign
-function loadInitialDataIntoCampaign(campaign) {
-    // Nations
-    campaign.nations = [
+// Load initial campaign data
+function loadInitialData() {
+    // Load nations
+    campaignData.nations = [
         {
             name: 'Holland/Netherlands',
             player: 'Dennis',
@@ -168,8 +63,191 @@ function loadInitialDataIntoCampaign(campaign) {
         }
     ];
 
-    // Mechanics
-    campaign.mechanics = [
+    // Load events
+    campaignData.events = [
+        {
+            id: 1,
+            date: '1338',
+            year: 1338,
+            nation: 'Castile',
+            event_type: 'War Start',
+            name: 'Granada Campaign Begins',
+            description: 'Castile invades Granada to complete the Reconquista. The war proves more difficult than expected due to mountainous terrain and Granada\'s fortifications.',
+            participants: ['Castile', 'Granada'],
+            war_name: 'The Granada War'
+        },
+        {
+            id: 2,
+            date: '1338',
+            year: 1338,
+            nation: 'Holland',
+            event_type: 'War Start',
+            name: 'Dutch Consolidation Begins',
+            description: 'Holland begins systematic conquest of neighboring Dutch provinces to forge a united Netherlands.',
+            participants: ['Holland', 'Gelders', 'Utrecht', 'Frisia'],
+            war_name: 'Wars of Dutch Unification'
+        },
+        {
+            id: 3,
+            date: '1338',
+            year: 1338,
+            nation: 'Mali',
+            event_type: 'Expansion',
+            name: 'Vassalization Strategy Initiated',
+            description: 'Mali begins expanding through vassalization of smaller tribal nations rather than direct conquest.',
+            participants: ['Mali']
+        },
+        {
+            id: 4,
+            date: '1345',
+            year: 1345,
+            nation: 'Castile',
+            event_type: 'War End',
+            name: 'Granada Falls',
+            description: 'After 8 years of brutal warfare including an invasion of Morocco, Granada finally surrenders. Victory comes at tremendous cost in manpower and gold.',
+            participants: ['Castile', 'Granada', 'Marinids'],
+            war_name: 'The Granada War'
+        },
+        {
+            id: 5,
+            date: '1350',
+            year: 1350,
+            nation: 'Castile',
+            event_type: 'War Start',
+            name: 'Aragon Conquest Begins',
+            description: 'Castile launches campaign to conquer Aragon, a major Mediterranean power. This war will determine whether Spain can be united.',
+            participants: ['Castile', 'Aragon'],
+            war_name: 'The Aragon War'
+        },
+        {
+            id: 6,
+            date: '1355',
+            year: 1355,
+            nation: 'Castile',
+            event_type: 'War End',
+            name: 'Aragon Destroyed',
+            description: 'After 5 years of warfare, Aragon is shattered. Castile annexes almost all Aragonese territory, bringing Spain within reach.',
+            participants: ['Castile', 'Aragon'],
+            war_name: 'The Aragon War'
+        },
+        {
+            id: 7,
+            date: '1364',
+            year: 1364,
+            nation: 'Castile',
+            event_type: 'War Start',
+            name: 'Coalition War Declared',
+            description: 'European powers form massive coalition against Castile. France, Portugal, and Papal States lead alliance of 110,000 troops against Castile\'s 40,000.',
+            participants: ['Castile', 'France', 'Portugal', 'Papal States'],
+            war_name: 'The Coalition War of 1364'
+        },
+        {
+            id: 8,
+            date: '1364',
+            year: 1364,
+            nation: 'Castile',
+            event_type: 'War End',
+            name: 'Castile Survives Coalition',
+            description: 'Through desperate fighting and tactical victories against Portugal, Castile negotiates survivable peace. Catalonia released as independent nation and war reparations paid.',
+            participants: ['Castile', 'France', 'Portugal', 'Papal States'],
+            war_name: 'The Coalition War of 1364'
+        },
+        {
+            id: 9,
+            date: '1368',
+            year: 1368,
+            nation: 'Holland',
+            event_type: 'Political',
+            name: 'Holland Becomes Duchy',
+            description: 'Holland achieves significant milestone by becoming a Duchy, increasing prestige and governmental capacity.',
+            participants: ['Holland']
+        },
+        {
+            id: 10,
+            date: '1377',
+            year: 1377,
+            nation: 'Holland',
+            event_type: 'Formation',
+            name: 'Netherlands Formed',
+            description: 'After annexing Frisia, Dennis formally proclaims the Duchy of the Netherlands. The fractured Dutch lands are finally united.',
+            participants: ['Holland']
+        },
+        {
+            id: 11,
+            date: '1379',
+            year: 1379,
+            nation: 'Holland',
+            event_type: 'Economic',
+            name: 'Infrastructure Project Begins',
+            description: 'Netherlands begins ambitious road network construction connecting The Hague, Amsterdam, and Utrecht. Project financed through loans.',
+            participants: ['Holland']
+        },
+        {
+            id: 12,
+            date: '1379',
+            year: 1379,
+            nation: 'Holland',
+            event_type: 'Crisis',
+            name: 'Food Market Crash',
+            description: 'Catastrophic food market collapse devastates Dutch agricultural revenues. Unable to service debt, Netherlands declares first bankruptcy.',
+            participants: ['Holland']
+        },
+        {
+            id: 13,
+            date: '1379',
+            year: 1379,
+            nation: 'Holland',
+            event_type: 'Economic',
+            name: 'Bankruptcy Death Spiral Begins',
+            description: 'Bankruptcy penalties prevent positive revenue, forcing repeated bankruptcies. Netherlands enters recursive economic crisis.',
+            participants: ['Holland']
+        },
+        {
+            id: 14,
+            date: '1379',
+            year: 1379,
+            nation: 'Castile',
+            event_type: 'Diplomatic',
+            name: 'Castilian Bailout',
+            description: 'Maikel provides emergency financial support: 280 gold loan at 2% interest plus 4.8 gold/month. Lifeline saves Netherlands from collapse.',
+            participants: ['Castile', 'Holland']
+        },
+        {
+            id: 15,
+            date: '1383',
+            year: 1383,
+            nation: 'Holland',
+            event_type: 'War Start',
+            name: 'Tax Revolt Erupts',
+            description: 'Massive civil war breaks out across Netherlands due to crushing taxation. Rebel armies rise in multiple provinces simultaneously.',
+            participants: ['Holland', 'Dutch Rebels'],
+            war_name: 'The Dutch Tax Revolt'
+        },
+        {
+            id: 16,
+            date: '1383',
+            year: 1383,
+            nation: 'Holland',
+            event_type: 'War End',
+            name: 'Revolt Crushed',
+            description: 'With support from defensive league allies (Münster, Luxembourg, Trier) and Denmark, loyalist forces crush the rebellion.',
+            participants: ['Holland', 'Münster', 'Luxembourg', 'Trier', 'Denmark'],
+            war_name: 'The Dutch Tax Revolt'
+        },
+        {
+            id: 17,
+            date: '1386',
+            year: 1386,
+            nation: 'Holland',
+            event_type: 'Economic',
+            name: 'Bankruptcy Penalties Expire',
+            description: 'Netherlands finally emerges from bankruptcy crisis. Economy stabilizes and recovery begins.',
+            participants: ['Holland']
+        }
+    ];
+
+    // Load mechanics
+    campaignData.mechanics = [
         {
             term: 'Pops',
             category: 'Core System',
@@ -232,223 +310,10 @@ function loadInitialDataIntoCampaign(campaign) {
         }
     ];
 
-    // If this is the default campaign, add initial events
-    if (campaign.name === 'Rise of Three Nations') {
-        campaign.events = [
-            {
-                id: 1,
-                date: '1338',
-                year: 1338,
-                nation: 'Castile',
-                event_type: 'War Start',
-                name: 'Granada Campaign Begins',
-                description: 'Castile invades Granada to complete the Reconquista. The war proves more difficult than expected due to mountainous terrain and Granada\'s fortifications.',
-                participants: ['Castile', 'Granada'],
-                war_name: 'The Granada War'
-            },
-            {
-                id: 2,
-                date: '1338',
-                year: 1338,
-                nation: 'Holland',
-                event_type: 'War Start',
-                name: 'Dutch Consolidation Begins',
-                description: 'Holland begins systematic conquest of neighboring Dutch provinces to forge a united Netherlands.',
-                participants: ['Holland', 'Gelders', 'Utrecht', 'Frisia'],
-                war_name: 'Wars of Dutch Unification'
-            },
-            {
-                id: 3,
-                date: '1338',
-                year: 1338,
-                nation: 'Mali',
-                event_type: 'Expansion',
-                name: 'Vassalization Strategy Initiated',
-                description: 'Mali begins expanding through vassalization of smaller tribal nations rather than direct conquest.',
-                participants: ['Mali']
-            },
-            {
-                id: 4,
-                date: '1345',
-                year: 1345,
-                nation: 'Castile',
-                event_type: 'War End',
-                name: 'Granada Falls',
-                description: 'After 8 years of brutal warfare including an invasion of Morocco, Granada finally surrenders. Victory comes at tremendous cost in manpower and gold.',
-                participants: ['Castile', 'Granada', 'Marinids'],
-                war_name: 'The Granada War'
-            },
-            {
-                id: 5,
-                date: '1350',
-                year: 1350,
-                nation: 'Castile',
-                event_type: 'War Start',
-                name: 'Aragon Conquest Begins',
-                description: 'Castile launches campaign to conquer Aragon, a major Mediterranean power. This war will determine whether Spain can be united.',
-                participants: ['Castile', 'Aragon'],
-                war_name: 'The Aragon War'
-            },
-            {
-                id: 6,
-                date: '1355',
-                year: 1355,
-                nation: 'Castile',
-                event_type: 'War End',
-                name: 'Aragon Destroyed',
-                description: 'After 5 years of warfare, Aragon is shattered. Castile annexes almost all Aragonese territory, bringing Spain within reach.',
-                participants: ['Castile', 'Aragon'],
-                war_name: 'The Aragon War'
-            },
-            {
-                id: 7,
-                date: '1364',
-                year: 1364,
-                nation: 'Castile',
-                event_type: 'War Start',
-                name: 'Coalition War Declared',
-                description: 'European powers form massive coalition against Castile. France, Portugal, and Papal States lead alliance of 110,000 troops against Castile\'s 40,000.',
-                participants: ['Castile', 'France', 'Portugal', 'Papal States'],
-                war_name: 'The Coalition War of 1364'
-            },
-            {
-                id: 8,
-                date: '1364',
-                year: 1364,
-                nation: 'Castile',
-                event_type: 'War End',
-                name: 'Castile Survives Coalition',
-                description: 'Through desperate fighting and tactical victories against Portugal, Castile negotiates survivable peace. Catalonia released as independent nation and war reparations paid.',
-                participants: ['Castile', 'France', 'Portugal', 'Papal States'],
-                war_name: 'The Coalition War of 1364'
-            },
-            {
-                id: 9,
-                date: '1368',
-                year: 1368,
-                nation: 'Holland',
-                event_type: 'Political',
-                name: 'Holland Becomes Duchy',
-                description: 'Holland achieves significant milestone by becoming a Duchy, increasing prestige and governmental capacity.',
-                participants: ['Holland']
-            },
-            {
-                id: 10,
-                date: '1377',
-                year: 1377,
-                nation: 'Holland',
-                event_type: 'Formation',
-                name: 'Netherlands Formed',
-                description: 'After annexing Frisia, Dennis formally proclaims the Duchy of the Netherlands. The fractured Dutch lands are finally united.',
-                participants: ['Holland']
-            },
-            {
-                id: 11,
-                date: '1379',
-                year: 1379,
-                nation: 'Holland',
-                event_type: 'Economic',
-                name: 'Infrastructure Project Begins',
-                description: 'Netherlands begins ambitious road network construction connecting The Hague, Amsterdam, and Utrecht. Project financed through loans.',
-                participants: ['Holland']
-            },
-            {
-                id: 12,
-                date: '1379',
-                year: 1379,
-                nation: 'Holland',
-                event_type: 'Crisis',
-                name: 'Food Market Crash',
-                description: 'Catastrophic food market collapse devastates Dutch agricultural revenues. Unable to service debt, Netherlands declares first bankruptcy.',
-                participants: ['Holland']
-            },
-            {
-                id: 13,
-                date: '1379',
-                year: 1379,
-                nation: 'Holland',
-                event_type: 'Economic',
-                name: 'Bankruptcy Death Spiral Begins',
-                description: 'Bankruptcy penalties prevent positive revenue, forcing repeated bankruptcies. Netherlands enters recursive economic crisis.',
-                participants: ['Holland']
-            },
-            {
-                id: 14,
-                date: '1379',
-                year: 1379,
-                nation: 'Castile',
-                event_type: 'Diplomatic',
-                name: 'Castilian Bailout',
-                description: 'Maikel provides emergency financial support: 280 gold loan at 2% interest plus 4.8 gold/month. Lifeline saves Netherlands from collapse.',
-                participants: ['Castile', 'Holland']
-            },
-            {
-                id: 15,
-                date: '1383',
-                year: 1383,
-                nation: 'Holland',
-                event_type: 'War Start',
-                name: 'Tax Revolt Erupts',
-                description: 'Massive civil war breaks out across Netherlands due to crushing taxation. Rebel armies rise in multiple provinces simultaneously.',
-                participants: ['Holland', 'Dutch Rebels'],
-                war_name: 'The Dutch Tax Revolt'
-            },
-            {
-                id: 16,
-                date: '1383',
-                year: 1383,
-                nation: 'Holland',
-                event_type: 'War End',
-                name: 'Revolt Crushed',
-                description: 'With support from defensive league allies (Münster, Luxembourg, Trier) and Denmark, loyalist forces crush the rebellion.',
-                participants: ['Holland', 'Münster', 'Luxembourg', 'Trier', 'Denmark'],
-                war_name: 'The Dutch Tax Revolt'
-            },
-            {
-                id: 17,
-                date: '1386',
-                year: 1386,
-                nation: 'Holland',
-                event_type: 'Economic',
-                name: 'Bankruptcy Penalties Expire',
-                description: 'Netherlands finally emerges from bankruptcy crisis. Economy stabilizes and recovery begins.',
-                participants: ['Holland']
-            }
-        ];
-        
-        campaign.currentYear = 1386;
-    }
-}
-
-// Temporary storage for form participants
-let currentParticipants = [];
-
-// Initialize the app
-function initApp() {
-    const currentCampaign = getCurrentCampaign();
-    if (!currentCampaign) {
-        console.error('No campaign found!');
-        return;
-    }
-    
-    renderDashboard();
-    renderTimeline();
-    renderWars();
-    renderNations();
-    renderGlossary();
-    updateWarsList();
-    updateCampaignDisplay();
-}
-
-// Update campaign display header
-function updateCampaignDisplay() {
-    const campaign = getCurrentCampaign();
-    if (campaign) {
-        const titleElement = document.querySelector('.header-subtitle');
-        if (titleElement) {
-            titleElement.textContent = `${campaign.name} • ${campaign.startDate}-${campaign.currentYear}`;
-        }
-    }
+    // Update current year to latest event
+    const latestEvent = campaignData.events.reduce((max, event) => 
+        event.year > max ? event.year : max, 1338);
+    campaignData.currentYear = latestEvent;
 }
 
 // Show specific section
@@ -472,6 +337,10 @@ function showSection(sectionId) {
     // Refresh section content if needed
     if (sectionId === 'timeline') {
         renderTimeline();
+        setTimeout(() => {
+            if (!timelineCanvas) initInteractiveTimeline();
+            else drawTimeline();
+        }, 50);
     } else if (sectionId === 'wars') {
         renderWars();
     } else if (sectionId === 'nations') {
@@ -485,30 +354,26 @@ function showSection(sectionId) {
 
 // Dashboard Functions
 function renderDashboard() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
-    document.getElementById('totalEvents').textContent = campaign.events.length;
+    document.getElementById('totalEvents').textContent = campaignData.events.length;
     
     // Count unique wars
     const wars = new Set();
-    campaign.events.forEach(event => {
+    campaignData.events.forEach(event => {
         if (event.war_name) wars.add(event.war_name);
     });
     document.getElementById('totalWars').textContent = wars.size;
     
-    document.getElementById('totalNations').textContent = campaign.nations.length;
-    document.getElementById('currentYear').textContent = campaign.currentYear;
+    document.getElementById('totalNations').textContent = campaignData.nations.length;
+    document.getElementById('currentYear').textContent = campaignData.currentYear;
     
     // Render recent events (last 5)
-    const recentEvents = [...campaign.events]
+    const recentEvents = [...campaignData.events]
         .sort((a, b) => b.year - a.year)
         .slice(0, 5);
     
     const recentEventsList = document.getElementById('recentEventsList');
     recentEventsList.innerHTML = recentEvents.map(event => {
         const icon = getEventIcon(event.event_type);
-        
         return `
         <div class="event-list-item">
             <div>
@@ -525,60 +390,420 @@ function renderDashboard() {
     `}).join('');
 }
 
+// Interactive Timeline Canvas Functions
+function initInteractiveTimeline() {
+    timelineCanvas = document.getElementById('interactiveTimeline');
+    if (!timelineCanvas) return;
+    
+    timelineCtx = timelineCanvas.getContext('2d');
+    
+    // Set canvas size
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Mouse events
+    timelineCanvas.addEventListener('mousedown', handleTimelineMouseDown);
+    timelineCanvas.addEventListener('mousemove', handleTimelineMouseMove);
+    timelineCanvas.addEventListener('mouseup', handleTimelineMouseUp);
+    timelineCanvas.addEventListener('mouseleave', handleTimelineMouseUp);
+    timelineCanvas.addEventListener('wheel', handleTimelineWheel, { passive: false });
+    timelineCanvas.addEventListener('click', handleTimelineClick);
+    
+    // Draw initial timeline
+    drawTimeline();
+}
+
+function resizeCanvas() {
+    if (!timelineCanvas) return;
+    const rect = timelineCanvas.parentElement.getBoundingClientRect();
+    timelineCanvas.width = rect.width - 48;
+    timelineCanvas.height = 400;
+    drawTimeline();
+}
+
+function drawTimeline() {
+    if (!timelineCtx) return;
+    
+    const canvas = timelineCanvas;
+    const ctx = timelineCtx;
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Background gradient
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+    bgGradient.addColorStop(0, '#252525');
+    bgGradient.addColorStop(1, '#2a2a2a');
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw timeline axis
+    const margin = 60;
+    const timelineY = height / 2;
+    const timelineWidth = width - margin * 2;
+    
+    // Main timeline line
+    ctx.strokeStyle = '#D4A574';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(margin, timelineY);
+    ctx.lineTo(width - margin, timelineY);
+    ctx.stroke();
+    
+    // Draw year markers and labels
+    const yearRange = timelineState.viewEnd - timelineState.viewStart;
+    const yearStep = yearRange > 100 ? 50 : yearRange > 50 ? 25 : 10;
+    
+    ctx.font = '12px Georgia, serif';
+    ctx.fillStyle = '#A0A0A0';
+    ctx.textAlign = 'center';
+    
+    for (let year = Math.ceil(timelineState.viewStart / yearStep) * yearStep; year <= timelineState.viewEnd; year += yearStep) {
+        const x = yearToX(year, margin, timelineWidth);
+        
+        // Tick mark
+        ctx.strokeStyle = '#D4A574';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, timelineY - 10);
+        ctx.lineTo(x, timelineY + 10);
+        ctx.stroke();
+        
+        // Year label
+        ctx.fillText(year.toString(), x, timelineY + 30);
+    }
+    
+    // Draw connecting lines for wars
+    const wars = getWarsData();
+    wars.forEach(war => {
+        if (war.startYear && war.endYear) {
+            const startX = yearToX(war.startYear, margin, timelineWidth);
+            const endX = yearToX(war.endYear, margin, timelineWidth);
+            
+            if (startX >= margin && endX <= width - margin) {
+                ctx.strokeStyle = 'rgba(196, 30, 58, 0.3)';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(startX, timelineY);
+                ctx.lineTo(endX, timelineY);
+                ctx.stroke();
+            }
+        }
+    });
+    
+    // Draw event dots
+    const filteredEvents = getFilteredEvents();
+    
+    filteredEvents.forEach(event => {
+        const x = yearToX(event.year, margin, timelineWidth);
+        if (x < margin || x > width - margin) return;
+        
+        const isHovered = timelineState.hoveredEvent && timelineState.hoveredEvent.id === event.id;
+        const radius = isHovered ? 10 : getEventRadius(event);
+        
+        // Event dot with gradient
+        const dotGradient = ctx.createRadialGradient(x, timelineY, 0, x, timelineY, radius);
+        const baseColor = getEventColor(event);
+        dotGradient.addColorStop(0, baseColor);
+        dotGradient.addColorStop(0.7, baseColor);
+        dotGradient.addColorStop(1, adjustColorBrightness(baseColor, -30));
+        ctx.fillStyle = dotGradient;
+        ctx.beginPath();
+        ctx.arc(x, timelineY, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Glow effect on hover
+        if (isHovered) {
+            ctx.strokeStyle = getEventColor(event);
+            ctx.lineWidth = 3;
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            ctx.arc(x, timelineY, radius + 5, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            
+            // Draw tooltip
+            drawTooltip(ctx, event, x, timelineY - 20);
+        }
+        
+        // Border
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, timelineY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+    });
+    
+    // Draw decorative corners
+    drawDecorativeCorners(ctx, width, height);
+}
+
+function drawTooltip(ctx, event, x, y) {
+    const icon = getEventIcon(event.event_type);
+    ctx.font = 'bold 13px Georgia, serif';
+    const text = `${icon} ${event.year}: ${event.name}`;
+    const metrics = ctx.measureText(text);
+    const padding = 10;
+    const tooltipWidth = metrics.width + padding * 2;
+    const tooltipHeight = 28;
+    
+    // Position tooltip
+    let tooltipX = x - tooltipWidth / 2;
+    if (tooltipX < 10) tooltipX = 10;
+    if (tooltipX + tooltipWidth > timelineCanvas.width - 10) tooltipX = timelineCanvas.width - tooltipWidth - 10;
+    
+    // Draw background with gradient
+    const gradient = ctx.createLinearGradient(tooltipX, y - tooltipHeight, tooltipX, y);
+    gradient.addColorStop(0, 'rgba(42, 42, 42, 0.98)');
+    gradient.addColorStop(1, 'rgba(37, 37, 37, 0.98)');
+    ctx.fillStyle = gradient;
+    ctx.strokeStyle = '#D4A574';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(tooltipX, y - tooltipHeight, tooltipWidth, tooltipHeight, 6);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Add inner glow
+    ctx.strokeStyle = 'rgba(212, 165, 116, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(tooltipX + 1, y - tooltipHeight + 1, tooltipWidth - 2, tooltipHeight - 2, 5);
+    ctx.stroke();
+    
+    // Draw text
+    ctx.fillStyle = '#D4A574';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 13px Georgia, serif';
+    ctx.fillText(text, tooltipX + tooltipWidth / 2, y - 9);
+}
+
+function drawDecorativeCorners(ctx, width, height) {
+    const cornerSize = 20;
+    ctx.strokeStyle = '#D4A574';
+    ctx.lineWidth = 2;
+    
+    // Top-left
+    ctx.beginPath();
+    ctx.moveTo(10, 10 + cornerSize);
+    ctx.lineTo(10, 10);
+    ctx.lineTo(10 + cornerSize, 10);
+    ctx.stroke();
+    
+    // Top-right
+    ctx.beginPath();
+    ctx.moveTo(width - 10 - cornerSize, 10);
+    ctx.lineTo(width - 10, 10);
+    ctx.lineTo(width - 10, 10 + cornerSize);
+    ctx.stroke();
+    
+    // Bottom-left
+    ctx.beginPath();
+    ctx.moveTo(10, height - 10 - cornerSize);
+    ctx.lineTo(10, height - 10);
+    ctx.lineTo(10 + cornerSize, height - 10);
+    ctx.stroke();
+    
+    // Bottom-right
+    ctx.beginPath();
+    ctx.moveTo(width - 10 - cornerSize, height - 10);
+    ctx.lineTo(width - 10, height - 10);
+    ctx.lineTo(width - 10, height - 10 - cornerSize);
+    ctx.stroke();
+}
+
+function yearToX(year, margin, timelineWidth) {
+    const range = timelineState.viewEnd - timelineState.viewStart;
+    const progress = (year - timelineState.viewStart) / range;
+    return margin + progress * timelineWidth;
+}
+
+function xToYear(x, margin, timelineWidth) {
+    const progress = (x - margin) / timelineWidth;
+    const range = timelineState.viewEnd - timelineState.viewStart;
+    return timelineState.viewStart + progress * range;
+}
+
+function getEventRadius(event) {
+    if (event.event_type === 'War Start' || event.event_type === 'War End') return 8;
+    if (event.event_type === 'Formation' || event.event_type === 'Crisis') return 7;
+    return 6;
+}
+
+function getEventColor(event) {
+    const colors = {
+        'War Start': '#C41E3A',
+        'War End': '#50C878',
+        'Economic': '#FFD700',
+        'Political': '#3B5998',
+        'Formation': '#50C878',
+        'Crisis': '#D35400',
+        'Diplomatic': '#9B59B6',
+        'Expansion': '#CD7F32',
+        'Cultural': '#8B4789',
+        'Religious': '#8B4789'
+    };
+    return colors[event.event_type] || '#3B5998';
+}
+
+function adjustColorBrightness(color, amount) {
+    const hex = color.replace('#', '');
+    const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
+    const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
+    const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+function handleTimelineMouseDown(e) {
+    timelineState.isDragging = true;
+    timelineState.lastX = e.offsetX;
+}
+
+function handleTimelineMouseMove(e) {
+    const margin = 60;
+    const timelineWidth = timelineCanvas.width - margin * 2;
+    
+    // Check for hovered event
+    const year = xToYear(e.offsetX, margin, timelineWidth);
+    const threshold = 15;
+    
+    let foundHover = null;
+    const filteredEvents = getFilteredEvents();
+    
+    for (const event of filteredEvents) {
+        const x = yearToX(event.year, margin, timelineWidth);
+        const distance = Math.abs(e.offsetX - x);
+        
+        if (distance < threshold) {
+            foundHover = event;
+            break;
+        }
+    }
+    
+    if (foundHover !== timelineState.hoveredEvent) {
+        timelineState.hoveredEvent = foundHover;
+        drawTimeline();
+    }
+    
+    // Handle dragging
+    if (timelineState.isDragging) {
+        const deltaX = e.offsetX - timelineState.lastX;
+        const range = timelineState.viewEnd - timelineState.viewStart;
+        const yearDelta = -(deltaX / timelineWidth) * range;
+        
+        timelineState.viewStart += yearDelta;
+        timelineState.viewEnd += yearDelta;
+        
+        // Clamp to bounds
+        if (timelineState.viewStart < timelineState.startYear) {
+            timelineState.viewEnd += timelineState.startYear - timelineState.viewStart;
+            timelineState.viewStart = timelineState.startYear;
+        }
+        if (timelineState.viewEnd > timelineState.endYear) {
+            timelineState.viewStart -= timelineState.viewEnd - timelineState.endYear;
+            timelineState.viewEnd = timelineState.endYear;
+        }
+        
+        timelineState.lastX = e.offsetX;
+        drawTimeline();
+    }
+}
+
+function handleTimelineMouseUp(e) {
+    timelineState.isDragging = false;
+}
+
+function handleTimelineWheel(e) {
+    e.preventDefault();
+    
+    const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+    const range = timelineState.viewEnd - timelineState.viewStart;
+    const newRange = range * zoomFactor;
+    
+    // Clamp range
+    if (newRange < 10 || newRange > 500) return;
+    
+    const center = (timelineState.viewStart + timelineState.viewEnd) / 2;
+    timelineState.viewStart = center - newRange / 2;
+    timelineState.viewEnd = center + newRange / 2;
+    
+    // Clamp to bounds
+    if (timelineState.viewStart < timelineState.startYear) {
+        timelineState.viewEnd += timelineState.startYear - timelineState.viewStart;
+        timelineState.viewStart = timelineState.startYear;
+    }
+    if (timelineState.viewEnd > timelineState.endYear) {
+        timelineState.viewStart -= timelineState.viewEnd - timelineState.endYear;
+        timelineState.viewEnd = timelineState.endYear;
+    }
+    
+    drawTimeline();
+}
+
+function handleTimelineClick(e) {
+    if (timelineState.hoveredEvent) {
+        showEventDetail(timelineState.hoveredEvent.id);
+    }
+}
+
+function resetTimelineZoom() {
+    timelineState.viewStart = timelineState.startYear;
+    timelineState.viewEnd = timelineState.endYear;
+    drawTimeline();
+}
+
+function zoomToCentury(century) {
+    const startYear = century * 100;
+    const endYear = startYear + 100;
+    
+    timelineState.viewStart = Math.max(startYear, timelineState.startYear);
+    timelineState.viewEnd = Math.min(endYear, timelineState.endYear);
+    
+    drawTimeline();
+}
+
 // Timeline Functions
 function renderTimeline() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
     const filteredEvents = getFilteredEvents();
     const timelineEvents = document.getElementById('timelineEvents');
     
     if (filteredEvents.length === 0) {
-        timelineEvents.innerHTML = '<div class="timeline-container"><p style="text-align: center; color: var(--color-text-secondary);">No events match your filters.</p></div>';
+        timelineEvents.innerHTML = '<p style="text-align: center; color: var(--color-text-secondary);">No events match your filters.</p>';
         return;
     }
     
     const sortedEvents = [...filteredEvents].sort((a, b) => a.year - b.year);
     
-    const container = `<div class="timeline-container">
-        <div class="timeline-events">
-            ${sortedEvents.map(event => {
-                const nationBadge = getNationBadgeClass(event.nation);
-                const typeBadge = getTypeBadgeClass(event.event_type);
-                const icon = getEventIcon(event.event_type);
-                
-                return `
-                <div class="timeline-event">
-                    <div class="timeline-event-header">
-                        <span class="timeline-event-date">📅 ${event.year}</span>
-                        <div class="event-badges">
-                            <span class="badge ${nationBadge}">${event.nation}</span>
-                            <span class="badge ${typeBadge}">${icon} ${event.event_type}</span>
-                        </div>
-                    </div>
-                    <h3 class="timeline-event-name">${event.name}</h3>
-                    <p class="timeline-event-description">${truncateText(event.description, 150)}</p>
-                    ${event.war_name ? `<div style="margin-top: var(--space-8);"><span class="badge badge-war">⚔️ ${event.war_name}</span></div>` : ''}
-                    <div style="margin-top: var(--space-12);">
-                        <button class="btn btn-secondary" style="padding: var(--space-4) var(--space-8); font-size: 12px;" onclick="showEventDetail(${event.id})">View Details</button>
+    timelineEvents.innerHTML = sortedEvents.map(event => {
+        const nationBadge = getNationBadgeClass(event.nation);
+        const typeBadge = getTypeBadgeClass(event.event_type);
+        const icon = getEventIcon(event.event_type);
+        
+        return `
+            <div class="timeline-event" onclick="showEventDetail(${event.id})">
+                <div class="timeline-event-header">
+                    <span class="timeline-event-date">📅 ${event.year}</span>
+                    <div class="event-badges">
+                        <span class="badge ${nationBadge}">${event.nation}</span>
+                        <span class="badge ${typeBadge}">${icon} ${event.event_type}</span>
                     </div>
                 </div>
-            `}).join('')}
-        </div>
-    </div>`;
-    
-    timelineEvents.innerHTML = container;
+                <h3 class="timeline-event-name">${event.name}</h3>
+                <p class="timeline-event-description">${truncateText(event.description, 150)}</p>
+                ${event.war_name ? `<div style="margin-top: var(--space-8);"><span class="badge badge-war">⚔️ ${event.war_name}</span></div>` : ''}
+            </div>
+        `;
+    }).join('');
 }
 
 function getFilteredEvents() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return [];
-    
     const nationFilter = document.getElementById('filterNation').value;
     const typeFilter = document.getElementById('filterType').value;
     const searchTerm = document.getElementById('searchTimeline').value.toLowerCase();
     
-    return campaign.events.filter(event => {
+    return campaignData.events.filter(event => {
         const matchesNation = nationFilter === 'all' || event.nation.includes(nationFilter);
         const matchesType = typeFilter === 'all' || event.event_type === typeFilter;
         const matchesSearch = searchTerm === '' || 
@@ -592,13 +817,11 @@ function getFilteredEvents() {
 
 function filterTimeline() {
     renderTimeline();
+    drawTimeline();
 }
 
 // Wars Functions
 function renderWars() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
     const wars = getWarsData();
     const warsGrid = document.getElementById('warsGrid');
     
@@ -611,6 +834,7 @@ function renderWars() {
         const duration = war.endYear ? `${war.startYear} - ${war.endYear}` : `${war.startYear} - Ongoing`;
         const statusClass = war.endYear ? 'completed' : 'ongoing';
         const statusText = war.endYear ? '🏆 Completed' : '⚔️ Ongoing';
+        const yearCount = war.endYear ? war.endYear - war.startYear : 'Ongoing';
         
         return `
             <div class="war-card">
@@ -638,12 +862,9 @@ function renderWars() {
 }
 
 function getWarsData() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return [];
-    
     const warsMap = new Map();
     
-    campaign.events.forEach(event => {
+    campaignData.events.forEach(event => {
         if (event.war_name) {
             if (!warsMap.has(event.war_name)) {
                 warsMap.set(event.war_name, {
@@ -676,13 +897,10 @@ function getWarsData() {
 
 // Nations Functions
 function renderNations() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
     const nationsGrid = document.getElementById('nationsGrid');
     
-    nationsGrid.innerHTML = campaign.nations.map(nation => {
-        const nationEvents = campaign.events
+    nationsGrid.innerHTML = campaignData.nations.map(nation => {
+        const nationEvents = campaignData.events
             .filter(e => e.nation.includes(nation.name.split('/')[0]))
             .sort((a, b) => b.year - a.year)
             .slice(0, 5);
@@ -728,10 +946,7 @@ function renderGlossary() {
 }
 
 function renderGlossaryCategories() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
-    const categories = ['All', ...new Set(campaign.mechanics.map(m => m.category))];
+    const categories = ['All', ...new Set(campaignData.mechanics.map(m => m.category))];
     const categoriesContainer = document.getElementById('glossaryCategories');
     
     categoriesContainer.innerHTML = categories.map((cat, index) => {
@@ -741,10 +956,7 @@ function renderGlossaryCategories() {
 }
 
 function renderGlossaryList(filteredMechanics = null) {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
-    const mechanics = filteredMechanics || campaign.mechanics;
+    const mechanics = filteredMechanics || campaignData.mechanics;
     const glossaryList = document.getElementById('glossaryList');
     
     if (mechanics.length === 0) {
@@ -773,11 +985,8 @@ function renderGlossaryList(filteredMechanics = null) {
 }
 
 function filterGlossary() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
     const searchTerm = document.getElementById('glossarySearch').value.toLowerCase();
-    const filtered = campaign.mechanics.filter(m => 
+    const filtered = campaignData.mechanics.filter(m => 
         m.term.toLowerCase().includes(searchTerm) ||
         m.definition.toLowerCase().includes(searchTerm)
     );
@@ -785,9 +994,6 @@ function filterGlossary() {
 }
 
 function filterGlossaryByCategory(category) {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
     // Update active button
     document.querySelectorAll('.category-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -795,35 +1001,32 @@ function filterGlossaryByCategory(category) {
     event.target.classList.add('active');
     
     const filtered = category === 'All' 
-        ? campaign.mechanics 
-        : campaign.mechanics.filter(m => m.category === category);
+        ? campaignData.mechanics 
+        : campaignData.mechanics.filter(m => m.category === category);
     
     renderGlossaryList(filtered);
 }
 
 // Export Functions
 function generateChronicle() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
     const exportPreview = document.getElementById('exportPreview');
     const wars = getWarsData();
     
     let chronicleHTML = `
         <h1>EU5 Campaign Chronicle</h1>
-        <h2>${campaign.name}</h2>
-        <p><strong>Campaign Period:</strong> ${campaign.startDate} - ${campaign.currentYear}</p>
-        <p><strong>Players:</strong> ${campaign.nations.map(n => `${n.player} (${n.name})`).join(', ')}</p>
+        <h2>Rise of Three Nations</h2>
+        <p><strong>Campaign Period:</strong> ${campaignData.startDate} - ${campaignData.currentYear}</p>
+        <p><strong>Players:</strong> ${campaignData.nations.map(n => `${n.player} (${n.name})`).join(', ')}</p>
         
         <h2>Campaign Overview</h2>
-        <p>This chronicle documents the epic journey of ${campaign.nations.length} player nations in Europa Universalis 5, beginning in ${campaign.startDate}. 
-        Through ${campaign.events.length} recorded events and ${wars.length} major wars, the campaign has unfolded into a rich tapestry of conquest, 
+        <p>This chronicle documents the epic journey of three player nations in Europa Universalis 5, beginning in ${campaignData.startDate}. 
+        Through ${campaignData.events.length} recorded events and ${wars.length} major wars, the campaign has unfolded into a rich tapestry of conquest, 
         diplomacy, economic struggle, and triumph.</p>
         
         <h2>The Nations</h2>
     `;
     
-    campaign.nations.forEach(nation => {
+    campaignData.nations.forEach(nation => {
         chronicleHTML += `
             <h3>${nation.name}</h3>
             <p><strong>Played by:</strong> ${nation.player}</p>
@@ -834,7 +1037,7 @@ function generateChronicle() {
     
     chronicleHTML += '<h2>Complete Timeline of Events</h2>';
     
-    const sortedEvents = [...campaign.events].sort((a, b) => a.year - b.year);
+    const sortedEvents = [...campaignData.events].sort((a, b) => a.year - b.year);
     
     sortedEvents.forEach(event => {
         chronicleHTML += `
@@ -872,16 +1075,13 @@ function copyChronicle() {
     const text = exportPreview.innerText;
     
     navigator.clipboard.writeText(text).then(() => {
-        alert('✓ Chronicle copied to clipboard!');
+        alert('Chronicle copied to clipboard!');
     }).catch(err => {
         console.error('Failed to copy:', err);
     });
 }
 
 function downloadChronicle() {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
     const exportPreview = document.getElementById('exportPreview');
     const text = exportPreview.innerText;
     
@@ -889,7 +1089,7 @@ function downloadChronicle() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `EU5_Chronicle_${campaign.name}_${campaign.currentYear}.txt`;
+    a.download = `EU5_Chronicle_${campaignData.currentYear}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -965,11 +1165,9 @@ function renderParticipants() {
 // Add Event
 function addEvent(event) {
     event.preventDefault();
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
     
     const newEvent = {
-        id: Math.max(...campaign.events.map(e => e.id), 0) + 1,
+        id: campaignData.events.length + 1,
         year: parseInt(document.getElementById('eventYear').value),
         date: document.getElementById('eventYear').value,
         nation: document.getElementById('eventNation').value,
@@ -984,31 +1182,28 @@ function addEvent(event) {
         newEvent.war_name = warName;
     }
     
-    campaign.events.push(newEvent);
+    campaignData.events.push(newEvent);
     
     // Update current year if needed
-    if (newEvent.year > campaign.currentYear) {
-        campaign.currentYear = newEvent.year;
+    if (newEvent.year > campaignData.currentYear) {
+        campaignData.currentYear = newEvent.year;
     }
     
-    saveCampaigns();
     closeModal('addEventModal');
     updateWarsList();
     renderDashboard();
     renderTimeline();
     renderWars();
     
-    alert('✓ Event added successfully!');
+    alert('Event added successfully!');
 }
 
 function addEventAndContinue() {
     const form = document.getElementById('addEventForm');
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
     
     if (form.checkValidity()) {
         const newEvent = {
-            id: Math.max(...campaign.events.map(e => e.id), 0) + 1,
+            id: campaignData.events.length + 1,
             year: parseInt(document.getElementById('eventYear').value),
             date: document.getElementById('eventYear').value,
             nation: document.getElementById('eventNation').value,
@@ -1023,13 +1218,11 @@ function addEventAndContinue() {
             newEvent.war_name = warName;
         }
         
-        campaign.events.push(newEvent);
+        campaignData.events.push(newEvent);
         
-        if (newEvent.year > campaign.currentYear) {
-            campaign.currentYear = newEvent.year;
+        if (newEvent.year > campaignData.currentYear) {
+            campaignData.currentYear = newEvent.year;
         }
-        
-        saveCampaigns();
         
         // Clear form but keep modal open
         document.getElementById('addEventForm').reset();
@@ -1039,8 +1232,9 @@ function addEventAndContinue() {
         renderDashboard();
         renderTimeline();
         renderWars();
+        drawTimeline();
         
-        alert('✓ Event added! Add another event.');
+        alert('Event added! Add another event.');
     } else {
         form.reportValidity();
     }
@@ -1049,8 +1243,6 @@ function addEventAndContinue() {
 // Add Mechanic
 function addMechanic(event) {
     event.preventDefault();
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
     
     const newMechanic = {
         term: document.getElementById('mechanicTerm').value,
@@ -1058,21 +1250,17 @@ function addMechanic(event) {
         definition: document.getElementById('mechanicDefinition').value
     };
     
-    campaign.mechanics.push(newMechanic);
+    campaignData.mechanics.push(newMechanic);
     
-    saveCampaigns();
     closeModal('addMechanicModal');
     renderGlossary();
     
-    alert('✓ Mechanic added successfully!');
+    alert('Mechanic added successfully!');
 }
 
 // Event Detail Modal
 function showEventDetail(eventId) {
-    const campaign = getCurrentCampaign();
-    if (!campaign) return;
-    
-    const event = campaign.events.find(e => e.id === eventId);
+    const event = campaignData.events.find(e => e.id === eventId);
     if (!event) return;
     
     const modal = document.getElementById('eventDetailModal');
@@ -1145,11 +1333,7 @@ function truncateText(text, maxLength) {
 }
 
 // Initialize app when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    initializeCampaigns();
-    updateCampaignSelector();
-    initApp();
-});
+document.addEventListener('DOMContentLoaded', initApp);
 
 // Allow enter key to add participants
 document.addEventListener('DOMContentLoaded', () => {
