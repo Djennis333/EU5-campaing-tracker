@@ -298,29 +298,6 @@ body {
     gap: var(--space-16);
     margin-bottom: var(--space-32);
 }
-<button class="btn btn-secondary" onclick="resetCampaign()">🔄 Reset Campaign</button>
-```**`exportCampaignAsJSON()`** - Backup maken
-- Download je volledige campaign als JSON-bestand
-- Handig voor veiligheidscopieën
-
-**`importCampaignFromJSON()`** - Campaign herstellen
-- Upload een eerder gedownload JSON-bestand
-- Perfect voor multi-device support
-
-### 3. **Automatische Data Persistentie**
-Alle deze functies slaan nu automatisch op:
-- ✅ Toegevoegde events
-- ✅ Toegevoegde mechanics
-- ✅ Alle wijzigingen
-- ✅ Huidige jahr
-
-## 📝 Hoe te Gebruiken:
-
-1. Vervang je huidige `app.js` met dit bestand
-2. Wanneer je nu events/mechanics toevoegt → **automatisch opgeslagen** 🚀
-3. Bij refresh → alles is nog daar ✨
-
-De gegevens zijn lokaal in jouw browser opgeslagen (niet op GitHub). Dit werkt perfect voor 20+ sessies!
 
 .stat-card {
     background-color: var(--color-surface);
@@ -366,10 +343,16 @@ De gegevens zijn lokaal in jouw browser opgeslagen (niet op GitHub). Dit werkt p
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: var(--space-12);
 }
 
 .event-list-item:last-child {
     border-bottom: none;
+}
+
+.event-actions {
+    display: flex;
+    gap: var(--space-8);
 }
 
 /* Timeline */
@@ -551,6 +534,21 @@ De gegevens zijn lokaal in jouw browser opgeslagen (niet op GitHub). Dit werkt p
 
 .btn-secondary:hover {
     background: var(--color-secondary-hover);
+}
+
+.btn-danger {
+    background: rgba(var(--color-error-rgb), 0.15);
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+}
+
+.btn-danger:hover {
+    background: rgba(var(--color-error-rgb), 0.25);
+}
+
+.btn-small {
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--font-size-sm);
 }
 
 /* Form Styles */
@@ -801,6 +799,12 @@ select.form-control {
     margin-left: -1em;
 }
 
+.nation-card-actions {
+    display: flex;
+    gap: var(--space-8);
+    margin-top: var(--space-16);
+}
+
 /* Glossary */
 .glossary-search {
     margin-bottom: var(--space-20);
@@ -884,6 +888,7 @@ select.form-control {
     display: flex;
     gap: var(--space-12);
     margin-bottom: var(--space-20);
+    flex-wrap: wrap;
 }
 
 .export-preview h1 {
@@ -948,6 +953,45 @@ select.form-control {
     color: var(--color-error);
 }
 
+/* Campaign Startup */
+.startup-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--color-background);
+}
+
+.startup-content {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-32);
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+}
+
+.startup-title {
+    font-family: var(--font-family-serif);
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-16);
+}
+
+.startup-subtitle {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-32);
+}
+
+.startup-options {
+    display: flex;
+    gap: var(--space-16);
+    flex-direction: column;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .header-content {
@@ -969,6 +1013,14 @@ select.form-control {
         flex-direction: column;
         align-items: stretch;
     }
+
+    .export-actions {
+        flex-direction: column;
+    }
+
+    .export-actions .btn {
+        width: 100%;
+    }
 }
 
 .filter-section {
@@ -981,139 +1033,253 @@ select.form-control {
     flex: 1;
     min-width: 200px;
 }
+
+.setup-section {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-24);
+    margin-bottom: var(--space-24);
+}
+
+.setup-title {
+    font-family: var(--font-family-serif);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-16);
+}
+
+.setup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-16);
+}
+
+.setup-card {
+    background-color: var(--color-background);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-16);
+}
+
+.setup-card h3 {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--space-12);
+}
+
+.nation-form-group {
+    margin-bottom: var(--space-12);
+}
+
+.nation-form-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-4);
+    display: block;
+}
+
+.nation-form-input {
+    width: 100%;
+    padding: var(--space-8);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    font-size: var(--font-size-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+}
+
+.color-picker-wrapper {
+    display: flex;
+    gap: var(--space-8);
+    align-items: center;
+}
+
+.color-picker-wrapper input[type="color"] {
+    width: 50px;
+    height: 40px;
+    border: none;
+    border-radius: var(--radius-base);
+    cursor: pointer;
+}
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div>
-                <h1 class="header-title">EU5 Campaign Chronicle</h1>
-                <p class="header-subtitle">Rise of Three Nations (1338-1837)</p>
+    <div id="startupScreen" class="startup-screen">
+        <div class="startup-content">
+            <h1 class="startup-title">EU5 Campaign Chronicle</h1>
+            <p class="startup-subtitle">Rise of Three Nations</p>
+            <div class="startup-options">
+                <button class="btn btn-primary" onclick="startNewCampaign()" style="font-size: var(--font-size-lg); padding: var(--space-16) var(--space-24);">
+                    🚀 Start New Blank Campaign
+                </button>
+                <button class="btn btn-secondary" onclick="loadExistingCampaign()" style="font-size: var(--font-size-lg); padding: var(--space-16) var(--space-24);">
+                    📂 Load Existing Campaign
+                </button>
             </div>
-            <nav class="nav">
-                <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
-                <button class="nav-btn" onclick="showSection('timeline')">Timeline</button>
-                <button class="nav-btn" onclick="showSection('wars')">Wars</button>
-                <button class="nav-btn" onclick="showSection('nations')">Nations</button>
-                <button class="nav-btn" onclick="showSection('glossary')">Glossary</button>
-                <button class="nav-btn" onclick="showSection('export')">Export</button>
-            </nav>
         </div>
-    </header>
+    </div>
 
-    <main class="container">
-        <!-- Dashboard Section -->
-        <section id="dashboard" class="section active">
-            <div class="dashboard-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Total Events</div>
-                    <div class="stat-value" id="totalEvents">17</div>
+    <div id="mainApp" style="display: none;">
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1 class="header-title">EU5 Campaign Chronicle</h1>
+                    <p class="header-subtitle">Rise of Three Nations</p>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Wars Tracked</div>
-                    <div class="stat-value" id="totalWars">5</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Nations</div>
-                    <div class="stat-value" id="totalNations">3</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Current Year</div>
-                    <div class="stat-value" id="currentYear">1386</div>
-                </div>
+                <nav class="nav">
+                    <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
+                    <button class="nav-btn" onclick="showSection('setup')">Setup</button>
+                    <button class="nav-btn" onclick="showSection('timeline')">Timeline</button>
+                    <button class="nav-btn" onclick="showSection('wars')">Wars</button>
+                    <button class="nav-btn" onclick="showSection('nations')">Nations</button>
+                    <button class="nav-btn" onclick="showSection('glossary')">Glossary</button>
+                    <button class="nav-btn" onclick="showSection('export')">Export</button>
+                </nav>
             </div>
+        </header>
 
-            <div class="recent-events">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-16);">
-                    <h2 class="section-title" style="margin-bottom: 0;">Recent Events</h2>
-                    <button class="btn btn-primary" onclick="openAddEventModal()">Add Event</button>
-                </div>
-                <div id="recentEventsList"></div>
-            </div>
-        </section>
-
-        <!-- Timeline Section -->
-        <section id="timeline" class="section">
-            <div class="timeline-controls">
-                <div class="filter-section">
-                    <div class="filter-group">
-                        <label class="form-label">Nation</label>
-                        <select class="form-control" id="filterNation" onchange="filterTimeline()">
-                            <option value="all">All Nations</option>
-                            <option value="Holland">Holland/Netherlands</option>
-                            <option value="Castile">Castile</option>
-                            <option value="Mali">Mali</option>
-                        </select>
+        <main class="container">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Events</div>
+                        <div class="stat-value" id="totalEvents">0</div>
                     </div>
-                    <div class="filter-group">
-                        <label class="form-label">Event Type</label>
-                        <select class="form-control" id="filterType" onchange="filterTimeline()">
-                            <option value="all">All Types</option>
-                            <option value="War Start">War Start</option>
-                            <option value="War End">War End</option>
-                            <option value="Economic">Economic</option>
-                            <option value="Political">Political</option>
-                            <option value="Crisis">Crisis</option>
-                            <option value="Formation">Formation</option>
-                            <option value="Diplomatic">Diplomatic</option>
-                            <option value="Expansion">Expansion</option>
-                        </select>
+                    <div class="stat-card">
+                        <div class="stat-label">Wars Tracked</div>
+                        <div class="stat-value" id="totalWars">0</div>
                     </div>
-                    <div class="filter-group">
-                        <label class="form-label">Search</label>
-                        <input type="text" class="form-control" id="searchTimeline" placeholder="Search events..." oninput="filterTimeline()">
+                    <div class="stat-card">
+                        <div class="stat-label">Nations</div>
+                        <div class="stat-value" id="totalNations">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Current Year</div>
+                        <div class="stat-value" id="currentYear">1338</div>
                     </div>
                 </div>
-            </div>
 
-            <div class="timeline-container">
-                <div id="timelineEvents" class="timeline-events"></div>
-            </div>
-        </section>
+                <div class="recent-events">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-16);">
+                        <h2 class="section-title" style="margin-bottom: 0;">Recent Events</h2>
+                        <button class="btn btn-primary" onclick="openAddEventModal()">+ Add Event</button>
+                    </div>
+                    <div id="recentEventsList"></div>
+                </div>
+            </section>
 
-        <!-- Wars Section -->
-        <section id="wars" class="section">
-            <h2 class="section-title">War Tracker</h2>
-            <div class="wars-grid" id="warsGrid"></div>
-        </section>
+            <!-- Setup Section -->
+            <section id="setup" class="section">
+                <div class="setup-section">
+                    <h2 class="setup-title">Campaign Setup</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Campaign Name</label>
+                        <input type="text" class="form-control" id="campaignName" placeholder="Enter campaign name" value="Rise of Three Nations">
+                    </div>
 
-        <!-- Nations Section -->
-        <section id="nations" class="section">
-            <h2 class="section-title">Nation Profiles</h2>
-            <div class="nations-grid" id="nationsGrid"></div>
-        </section>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-16);">
+                        <div class="form-group">
+                            <label class="form-label">Start Year</label>
+                            <input type="number" class="form-control" id="startYear" min="1" value="1338">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Current Year</label>
+                            <input type="number" class="form-control" id="setupCurrentYear" min="1" value="1338">
+                        </div>
+                    </div>
 
-        <!-- Glossary Section -->
-        <section id="glossary" class="section">
-            <h2 class="section-title">Game Mechanics Glossary</h2>
-            
-            <div class="glossary-search">
-                <input type="text" class="form-control" id="glossarySearch" placeholder="Search mechanics..." oninput="filterGlossary()">
-            </div>
+                    <button class="btn btn-primary" onclick="updateCampaignSettings()" style="margin-top: var(--space-16);">Save Campaign Settings</button>
+                </div>
 
-            <div class="glossary-categories" id="glossaryCategories"></div>
+                <h2 class="section-title">Manage Nations</h2>
+                <div class="setup-grid" id="nationsSetupGrid"></div>
+                <button class="btn btn-primary" onclick="openAddNationModal()" style="margin-top: var(--space-16);">+ Add New Nation</button>
+            </section>
 
-            <div>
-                <button class="btn btn-primary" onclick="openAddMechanicModal()">Add New Mechanic</button>
-            </div>
+            <!-- Timeline Section -->
+            <section id="timeline" class="section">
+                <div class="timeline-controls">
+                    <div class="filter-section">
+                        <div class="filter-group">
+                            <label class="form-label">Nation</label>
+                            <select class="form-control" id="filterNation" onchange="filterTimeline()">
+                                <option value="all">All Nations</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="form-label">Event Type</label>
+                            <select class="form-control" id="filterType" onchange="filterTimeline()">
+                                <option value="all">All Types</option>
+                                <option value="War Start">War Start</option>
+                                <option value="War End">War End</option>
+                                <option value="Economic">Economic</option>
+                                <option value="Political">Political</option>
+                                <option value="Crisis">Crisis</option>
+                                <option value="Formation">Formation</option>
+                                <option value="Diplomatic">Diplomatic</option>
+                                <option value="Expansion">Expansion</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" id="searchTimeline" placeholder="Search events..." oninput="filterTimeline()">
+                        </div>
+                    </div>
+                </div>
 
-            <div class="glossary-list" id="glossaryList" style="margin-top: var(--space-20);"></div>
-        </section>
+                <div class="timeline-container">
+                    <div id="timelineEvents" class="timeline-events"></div>
+                </div>
+            </section>
 
-        <!-- Export Section -->
-        <section id="export" class="section">
-            <h2 class="section-title">Export Chronicle</h2>
-            
-            <div class="export-actions">
-                <button class="btn btn-primary" onclick="generateChronicle()">Generate Chronicle</button>
-                <button class="btn btn-secondary" onclick="copyChronicle()">Copy to Clipboard</button>
-                <button class="btn btn-secondary" onclick="downloadChronicle()">Download as Text</button>
-                <button class="btn btn-secondary" onclick="window.print()">Print</button>
-            </div>
+            <!-- Wars Section -->
+            <section id="wars" class="section">
+                <h2 class="section-title">War Tracker</h2>
+                <div class="wars-grid" id="warsGrid"></div>
+            </section>
 
-            <div class="export-preview" id="exportPreview"></div>
-        </section>
-    </main>
+            <!-- Nations Section -->
+            <section id="nations" class="section">
+                <h2 class="section-title">Nation Profiles</h2>
+                <div class="nations-grid" id="nationsGrid"></div>
+            </section>
+
+            <!-- Glossary Section -->
+            <section id="glossary" class="section">
+                <h2 class="section-title">Game Mechanics Glossary</h2>
+                
+                <div class="glossary-search">
+                    <input type="text" class="form-control" id="glossarySearch" placeholder="Search mechanics..." oninput="filterGlossary()">
+                </div>
+
+                <div class="glossary-categories" id="glossaryCategories"></div>
+
+                <div>
+                    <button class="btn btn-primary" onclick="openAddMechanicModal()">Add New Mechanic</button>
+                </div>
+
+                <div class="glossary-list" id="glossaryList" style="margin-top: var(--space-20);"></div>
+            </section>
+
+            <!-- Export Section -->
+            <section id="export" class="section">
+                <h2 class="section-title">Export Chronicle</h2>
+                
+                <div class="export-actions">
+                    <button class="btn btn-primary" onclick="generateChronicle()">Generate Chronicle</button>
+                    <button class="btn btn-secondary" onclick="copyChronicle()">Copy to Clipboard</button>
+                    <button class="btn btn-secondary" onclick="downloadChronicle()">Download as Text</button>
+                    <button class="btn btn-secondary" onclick="exportCampaignAsJSON()">Export as JSON</button>
+                    <button class="btn btn-secondary" onclick="importCampaignFromJSON()">Import from JSON</button>
+                    <button class="btn btn-danger" onclick="resetCampaign()">Reset Campaign</button>
+                </div>
+
+                <div class="export-preview" id="exportPreview"></div>
+            </section>
+        </main>
+    </div>
 
     <!-- Add Event Modal -->
     <div id="addEventModal" class="modal">
@@ -1125,17 +1291,13 @@ select.form-control {
             <form id="addEventForm" onsubmit="addEvent(event)">
                 <div class="form-group">
                     <label class="form-label">Event Date (Year) *</label>
-                    <input type="number" class="form-control" id="eventYear" min="1337" max="1837" required>
+                    <input type="number" class="form-control" id="eventYear" required>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Nation *</label>
                     <select class="form-control" id="eventNation" required>
                         <option value="">Select Nation</option>
-                        <option value="Holland">Holland/Netherlands</option>
-                        <option value="Castile">Castile</option>
-                        <option value="Mali">Mali</option>
-                        <option value="Other">Other</option>
                     </select>
                 </div>
 
@@ -1185,7 +1347,48 @@ select.form-control {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('addEventModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary">Add Event</button>
-                    <button type="button" class="btn btn-primary" onclick="addEventAndContinue()">Add &amp; Continue</button>
+                    <button type="button" class="btn btn-primary" onclick="addEventAndContinue()">Add & Continue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Nation Modal -->
+    <div id="addNationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Nation</h2>
+                <button class="close" onclick="closeModal('addNationModal')">&times;</button>
+            </div>
+            <form id="addNationForm" onsubmit="addNation(event)">
+                <div class="form-group">
+                    <label class="form-label">Nation Name *</label>
+                    <input type="text" class="form-control" id="nationName" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Player Name *</label>
+                    <input type="text" class="form-control" id="nationPlayer" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nation Color *</label>
+                    <input type="color" class="form-control" id="nationColor" required style="height: 50px;">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Primary Culture *</label>
+                    <input type="text" class="form-control" id="nationCulture" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">National Goals *</label>
+                    <textarea class="form-control" id="nationGoals" required></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addNationModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Nation</button>
                 </div>
             </form>
         </div>
